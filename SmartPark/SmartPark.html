@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartPark - Stylish AI Theme</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+/* ===== Stylish AI Colors & Fonts ===== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+:root {
+  --bg-color: #0c0c0f;
+  --text-color: #00fff0;
+  --slot-free: #00ff7f;
+  --slot-booked: #ff073a;
+  --slot-selected: #ffd700;
+  --header-bg: rgba(0, 31, 45, 0.9);
+  --form-bg: rgba(10,10,10,0.8);
+  --glass-bg: rgba(255,255,255,0.05);
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Orbitron', sans-serif;
+  margin: 0; padding: 0;
+  transition: all 0.3s ease;
+}
+
+body.dark { --bg-color: #111; --text-color:#0ff; }
+
+header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:15px 25px;
+  background: var(--header-bg);
+  box-shadow: 0 0 20px #00fff0, inset 0 0 30px #00fff0;
+  border-bottom: 1px solid #00fff0;
+  text-transform: uppercase;
+}
+
+header h1 { font-size:1.8rem; letter-spacing:2px; }
+
+button {
+  background:none; border:1px solid #00fff0; color:#00fff0; padding:6px 12px; cursor:pointer; border-radius:5px; font-weight:bold;
+  transition:0.3s;
+}
+button:hover { background:#00fff0; color:#0c0c0f; box-shadow:0 0 15px #00fff0; }
+
+main { padding:25px; }
+
+#parkingGrid {
+  display:grid; grid-template-columns: repeat(5,1fr); gap:12px; margin-bottom:25px;
+}
+
+.slot {
+  padding:25px; text-align:center; border-radius:12px;
+  cursor:pointer; color:black; font-weight:bold; position:relative;
+  text-shadow:0 0 5px #00fff0;
+  box-shadow: 0 0 10px #00fff0, inset 0 0 15px #00fff0;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.slot::after {
+  content:''; position:absolute; top:0; left:0; right:0; bottom:0; border-radius:12px;
+  box-shadow:0 0 15px #00ff7f inset; opacity:0; transition:0.5s;
+}
+.slot:hover { transform:scale(1.1); box-shadow:0 0 25px #00fff0, inset 0 0 30px #00fff0; }
+.slot.free::after { animation: neonPulse 1.5s infinite alternate; }
+@keyframes neonPulse { 0%{opacity:0.1} 100%{opacity:0.6} }
+
+.slot.free { background-color: var(--slot-free); }
+.slot.booked { background-color: var(--slot-booked); }
+.slot.selected { background-color: var(--slot-selected); color:black; box-shadow:0 0 20px #ffd700, inset 0 0 25px #ffd700; }
+
+form { background: var(--form-bg); padding:20px; border-radius:15px; box-shadow: 0 0 25px #00fff0; backdrop-filter: blur(10px); margin-bottom:25px; }
+form label { display:block; margin-bottom:10px; }
+form input, form select { margin-left:10px; background:#000; color:#00fff0; border:1px solid #00fff0; padding:5px 8px; border-radius:5px; }
+
+table { width:100%; border-collapse:collapse; margin-top:20px; background:var(--glass-bg); border-radius:10px; backdrop-filter: blur(8px); }
+table, th, td { border:1px solid #00fff0; }
+th, td { padding:8px; text-align:center; vertical-align:middle; color:#00fff0; }
+thead { background: rgba(0,31,45,0.7); }
+
+canvas { background:rgba(0,31,45,0.7); border-radius:15px; box-shadow:0 0 25px #00fff0; }
+
+/* Neon glow for QR code */
+#historyTable div[id^="qr"] canvas { filter: drop-shadow(0 0 4px #00fff0); }
+</style>
+</head>
+<body>
+<header>
+<h1>SmartPark AI</h1>
+<button id="themeToggle">Toggle Mode</button>
+</header>
+<main>
+<section id="parkingGridSection"><h2>Parking Slots</h2><div id="parkingGrid"></div></section>
+<section id="bookingFormSection"><h2>Book a Slot</h2>
+<form id="bookingForm">
+<label>Name: <input type="text" id="userName" required></label>
+<label>Vehicle No: <input type="text" id="vehicleNo" required></label>
+<label>Vehicle Type:
+<select id="vehicleType"><option value="Car">Car</option><option value="Bike">Bike</option><option value="EV">EV</option></select>
+</label>
+<label>Slot Number: <input type="number" id="slotNumber" required min="1" max="20"></label>
+<button type="submit">Book Slot</button>
+</form></section>
+<section id="historySection"><h2>Booking History</h2>
+<table id="historyTable"><thead><tr>
+<th>Slot</th><th>Name</th><th>Vehicle No</th><th>Type</th><th>Time In</th><th>Duration</th><th>Fee (₹)</th><th>QR Code</th>
+</tr></thead><tbody></tbody></table></section>
+<section id="chartSection"><h2>Parking Occupancy</h2><canvas id="occupancyChart" width="400" height="200"></canvas></section>
+
+<script>
+// ===== VARIABLES =====
+const parkingGrid=document.getElementById('parkingGrid');
+const bookingForm=document.getElementById('bookingForm');
+const historyTableBody=document.querySelector('#historyTable tbody');
+const themeToggle=document.getElementById('themeToggle');
+const totalSlots=20;
+let slots=JSON.parse(localStorage.getItem('slots'))||[];
+let bookings=JSON.parse(localStorage.getItem('bookings'))||[];
+
+// INIT SLOTS
+if(slots.length===0){for(let i=1;i<=totalSlots;i++)slots.push({number:i,status:'free'});localStorage.setItem('slots',JSON.stringify(slots));}
+
+// RENDER GRID
+function renderGrid(){parkingGrid.innerHTML='';slots.forEach(slot=>{const div=document.createElement('div');div.classList.add('slot',slot.status);div.textContent=slot.number;div.addEventListener('click',()=>selectSlot(slot.number));parkingGrid.appendChild(div);});}
+
+// SELECT SLOT
+function selectSlot(number){document.querySelectorAll('.slot').forEach(el=>el.classList.remove('selected'));const slotDiv=Array.from(parkingGrid.children).find(d=>Number(d.textContent)===number);slotDiv.classList.add('selected');document.getElementById('slotNumber').value=number;}
+
+// BOOK SLOT
+bookingForm.addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('userName').value;const vehicleNo=document.getElementById('vehicleNo').value;const vehicleType=document.getElementById('vehicleType').value;const slotNumber=Number(document.getElementById('slotNumber').value);const slotIndex=slots.findIndex(s=>s.number===slotNumber);if(slots[slotIndex].status==='free'){slots[slotIndex].status='booked';const timeIn=new Date().getTime();const booking={slotNumber,name,vehicleNo,vehicleType,timeIn,fee:0};bookings.push(booking);localStorage.setItem('slots',JSON.stringify(slots));localStorage.setItem('bookings',JSON.stringify(bookings));renderGrid();renderHistory();updateChart();bookingForm.reset();alert(`Slot ${slotNumber} booked successfully!`);}else alert('Slot already booked!');});
+
+// CALCULATE DURATION & FEE
+function calculateFee(timeIn){const now=new Date().getTime();const durationMs=now-timeIn;const durationMin=Math.floor(durationMs/60000);const durationStr=`${Math.floor(durationMin/60)}h ${durationMin%60}m`;const fee=Math.ceil(durationMin/60)*20;return {durationStr,fee};}
+
+// RENDER HISTORY
+function renderHistory(){historyTableBody.innerHTML='';bookings.forEach(b=>{const {durationStr,fee}=calculateFee(b.timeIn);b.fee=fee;const tr=document.createElement('tr');tr.innerHTML=`<td>${b.slotNumber}</td><td>${b.name}</td><td>${b.vehicleNo}</td><td>${b.vehicleType}</td><td>${new Date(b.timeIn).toLocaleTimeString()}</td><td>${durationStr}</td><td>${fee}</td><td><div id="qr${b.slotNumber}"></div></td>`;historyTableBody.appendChild(tr);QRCode.toCanvas(document.getElementById(`qr${b.slotNumber}`),`Slot:${b.slotNumber} Name:${b.name} Vehicle:${b.vehicleNo} Time:${new Date(b.timeIn).toLocaleTimeString()}`,{width:60,margin:0},err=>{if(err)console.error(err);});});localStorage.setItem('bookings',JSON.stringify(bookings));}
+
+// DARK/LIGHT MODE
+themeToggle.addEventListener('click',()=>document.body.classList.toggle('dark'));
+
+// PARKING CHART
+const ctx=document.getElementById('occupancyChart').getContext('2d');let chart;
+function updateChart(){const free=slots.filter(s=>s.status==='free').length;const booked=slots.filter(s=>s.status==='booked').length;if(chart)chart.destroy();chart=new Chart(ctx,{type:'pie',data:{labels:['Free','Booked'],datasets:[{data:[free,booked],backgroundColor:['#00ff7f','#ff073a']}]}});}
+
+// AUTO UPDATE TIMER
+setInterval(()=>renderHistory(),60000);
+
+// INITIAL RENDER
+renderGrid();renderHistory();updateChart();
+</script>
+</body>
+</html>
