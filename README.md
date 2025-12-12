@@ -1,4 +1,4 @@
- # 🚗 SmartPark
+ # 🚗 Task-99 SmartPark
 SmartPark is a cutting-edge, single-page web application for efficient parking management. Developed entirely with HTML5, CSS3, and vanilla JavaScript, it delivers an interactive parking lot visualization with real-time spot availability tracking. Users can easily select and reserve spots through an intuitive interface that works flawlessly across desktops, tablets, and mobile devices. No server or backend setup required—everything runs smoothly in the browser.
 ​
 
