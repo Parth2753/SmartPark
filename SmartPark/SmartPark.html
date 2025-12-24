@@ -161,13 +161,19 @@ let slots = JSON.parse(localStorage.getItem("slots")) || [];
 let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
 
 // INIT
-if(slots.length === 0){
-  for(let i=1;i<=totalSlots;i++){
-    slots.push({number:i,status:"free",vehicleNo:"",vehicleType:"",owner:""});
+if (slots.length !== totalSlots) {
+  slots = [];
+  for (let i = 1; i <= totalSlots; i++) {
+    slots.push({
+      number: i,
+      status: "free",
+      vehicleNo: "",
+      vehicleType: "",
+      owner: ""
+    });
   }
-  localStorage.setItem("slots",JSON.stringify(slots));
+  localStorage.setItem("slots", JSON.stringify(slots));
 }
-
 // GRID
 function renderGrid(){
   parkingGrid.innerHTML="";
@@ -292,4 +298,5 @@ renderAll();
 
 </body>
 </html>
+
 
