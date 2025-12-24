@@ -215,7 +215,29 @@ function searchVehicle(){
     ? `Found in Slot ${s.number} (${s.vehicleType})`
     : "Not found";
 }
+  function updateLiveRegister(){
+  liveRegister.innerHTML = "";
 
+  slots
+    .filter(s => s.status === "booked")
+    .forEach(s => {
+
+      const booking = bookings.find(
+        b => b.slot === s.number && b.timeOut === null
+      );
+
+      if (!booking) return;
+
+      const duration = getLiveDuration(booking.timeIn);
+
+      const li = document.createElement("li");
+      li.innerHTML = `
+        Slot ${s.number} → ${s.vehicleNo} (${s.vehicleType})<br>
+        ⏱️ Parked: ${duration}
+      `;
+      liveRegister.appendChild(li);
+    });
+}
 // CHECKOUT
 function checkoutVehicle(){
   const sn=Number(checkoutSlot.value);
@@ -270,3 +292,4 @@ renderAll();
 
 </body>
 </html>
+
