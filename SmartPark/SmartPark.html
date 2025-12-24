@@ -101,7 +101,6 @@ main{padding:20px}
   border:none;
   cursor:pointer;
 }
-
 .live-dot{
   width:10px;
   height:10px;
@@ -109,7 +108,21 @@ main{padding:20px}
   border-radius:50%;
   box-shadow:0 0 10px red;
   animation:blink 1s infinite;
+  margin-left:2px;
 }
+
+.live-text{
+  color:red;
+  font-weight:bold;
+  letter-spacing: 4px;   
+  padding:0;
+}
+.live-badge{
+  display:flex;
+  align-items:center;
+  gap:0;             
+}
+
 .section-card select{
   width:90%;
   padding:10px;
@@ -220,7 +233,10 @@ table th{
 <section class="section-card">
   <div class="section-header">
     <h2>Live Tracking</h2>
-    <span class="live-dot"></span>
+    <div class="live-badge">
+  <span class="live-text">LIVE</span>
+  <span class="live-dot"></span>
+</div>
   </div>
   <ul id="liveRegister"></ul>
 </section>
