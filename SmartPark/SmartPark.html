@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartPark AI</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
@@ -23,6 +20,7 @@ body{
   color:var(--txt);
   font-family:'Orbitron',sans-serif;
   margin:0;
+  min-height:100vh;
 }
 
 header{
@@ -34,60 +32,127 @@ header{
 
 main{padding:20px}
 
-button{
-  border:1px solid var(--txt);
-  background:none;
-  color:var(--txt);
-  padding:6px 12px;
-  cursor:pointer;
-}
-
+/* ===== PARKING GRID ===== */
 #parkingGrid{
   display:grid;
   grid-template-columns:repeat(5,1fr);
-  gap:10px;
+  gap:18px;
+  margin-bottom:40px;
 }
 
 .slot{
-  padding:15px;
-  border-radius:10px;
+  padding:18px;
+  border-radius:14px;
   font-weight:bold;
   text-align:center;
   cursor:pointer;
+  transition:transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.free{background:var(--free); color:black}
-.booked{background:var(--booked); color:black}
+.slot:hover{transform:scale(1.08)}
 
-form, section{
-  margin-top:20px;
-  padding:15px;
-  background:rgba(0,0,0,0.6);
+.free{
+  background:linear-gradient(135deg,#00ff7f,#00cc66);
+  color:black;
+  box-shadow:0 0 12px #00ff7f;
+}
+
+.booked{
+  background:linear-gradient(135deg,#ff073a,#b3001b);
+  color:white;
+  box-shadow:0 0 12px #ff073a;
+}
+
+/* ===== SECTION CARD ===== */
+.section-card{
+  padding:25px;
+  margin-top:25px;
+  background:linear-gradient(145deg,rgba(0,255,240,0.1),rgba(0,0,0,0.7));
+  border-radius:18px;
+  border:1px solid rgba(0,255,240,0.4);
+  box-shadow:0 0 25px rgba(0,255,240,0.25);
+}
+
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.section-card input,
+.section-card select{
+  width:90%;
+  padding:10px;
+  margin-top:8px;
   border-radius:10px;
-  box-shadow:0 0 15px var(--txt);
+  background:black;
+  border:1px solid var(--txt);
+  color:var(--txt);
 }
 
-input, select{
+.action-btn{
+  margin-top:15px;
+  padding:10px 22px;
+  border-radius:25px;
+  background:linear-gradient(135deg,#00fff0,#0066ff);
+  color:black;
+  font-weight:bold;
+  border:none;
+  cursor:pointer;
+}
+
+.live-dot{
+  width:10px;
+  height:10px;
+  background:red;
+  border-radius:50%;
+  box-shadow:0 0 10px red;
+  animation:blink 1s infinite;
+}
+.section-card select{
+  width:90%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:10px;
   background:black;
-  color:var(--txt);
   border:1px solid var(--txt);
-  margin-left:5px;
+  color:var(--txt);
+}
+
+
+@keyframes blink{
+  0%{opacity:1}
+  50%{opacity:0.3}
+  100%{opacity:1}
+}
+
+#liveRegister{
+  list-style:none;
+  padding-left:0;
+}
+
+#liveRegister li{
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:10px;
+  background:rgba(255,7,58,0.15);
+  border-left:4px solid var(--booked);
 }
 
 table{
   width:100%;
-  margin-top:15px;
   border-collapse:collapse;
 }
 
-table,th,td{
+table th,table td{
   border:1px solid var(--txt);
-  padding:6px;
+  padding:8px;
   text-align:center;
 }
 
-#liveRegister li{
-  margin:6px 0;
+table th{
+  background:rgba(0,255,240,0.15);
 }
 </style>
 </head>
@@ -103,194 +168,169 @@ table,th,td{
 <h2>Parking Slots</h2>
 <div id="parkingGrid"></div>
 
-<form id="bookingForm">
-<h2>Register Vehicle</h2>
-<label>Name <input id="userName" required></label><br><br>
-<label>Vehicle No <input id="vehicleNo" required></label><br><br>
-<label>Type 
-<select id="vehicleType">
-<option>Car</option>
-<option>Bike</option>
-<option>EV</option>
+<!-- REGISTER SLOT -->
+<form id="bookingForm" class="section-card">
+  <div class="section-header"><h2>Register Slot</h2></div>
+
+  <label>Name <input id="userName" required></label><br><br>
+ <label>Vehicle Number</label><br>
+
+<select id="stateCode" autocomplete="off" required>
+  <option value="">Select State</option>
+  <option value="TG">TG</option>
+  <option value="AP">AP</option>
+  <option value="DL">DL</option>
+  <option value="UP">UP</option>
+  <option value="HR">HR</option>
 </select>
-</label><br><br>
-<label>Slot <input type="number" id="slotNumber" min="1" max="20" required></label><br><br>
-<button>Book Slot</button>
+
+<input 
+  type="text"
+  id="vehicleNo"
+  placeholder="09 AB 1234"
+  autocomplete="off"
+  required
+>
+<label>
+  <br>
+  <br>
+  Type
+  <br>
+    <select id="vehicleType">
+      <option>Car</option>
+      <option>Bike</option>
+      <option>EV</option>
+    </select>
+  </label><br><br>
+  <label>Slot 
+    <br>
+    <input type="number" id="slotNumber" min="1" max="40" required></label><br>
+  <button class="action-btn">Book Slot</button>
 </form>
 
-<section>
-<h2>Search Vehicle</h2>
-<input id="searchVehicle" placeholder="Vehicle Number">
-<button onclick="searchVehicle()">Search</button>
-<p id="searchResult"></p>
+<!-- SEARCH -->
+<section class="section-card">
+  <h2>Search Vehicle</h2>
+  <input id="searchVehicleInput" placeholder="Vehicle Number">
+  <button class="action-btn" onclick="searchVehicle()">Search</button>
+  <p id="searchResult"></p>
 </section>
 
-<section>
-<h2>Checkout Vehicle</h2>
-<input type="number" id="checkoutSlot" placeholder="Slot Number">
-<button onclick="checkoutVehicle()">Checkout</button>
+<!-- LIVE TRACKING -->
+<section class="section-card">
+  <div class="section-header">
+    <h2>Live Tracking</h2>
+    <span class="live-dot"></span>
+  </div>
+  <ul id="liveRegister"></ul>
 </section>
 
-<section>
-<h2>Live Parking Register</h2>
-<ul id="liveRegister"></ul>
+<!-- CHECKOUT -->
+<section class="section-card">
+  <h2>Checkout Vehicle</h2>
+  <input type="number" id="checkoutSlot" placeholder="Slot Number">
+  <button class="action-btn" onclick="checkoutVehicle()">Checkout</button>
 </section>
 
-<section>
-<h2>Booking History</h2>
-<table>
-<thead>
-<tr>
-<th>Slot</th><th>Name</th><th>Vehicle</th><th>Type</th><th>Time</th><th>Fee</th>
-</tr>
-</thead>
-<tbody id="historyTable"></tbody>
-</table>
+<!-- HISTORY -->
+<section class="section-card">
+  <h2>Slot History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Slot</th>
+        <th>Vehicle</th>
+        <th>Type</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
 </section>
-
-<canvas id="chart"></canvas>
 
 </main>
 
 <script>
-const totalSlots = 20;
-const parkingGrid = document.getElementById("parkingGrid");
-const historyTable = document.getElementById("historyTable");
+const parkingGrid=document.getElementById("parkingGrid");
+const liveRegister=document.getElementById("liveRegister");
+const historyTable=document.getElementById("historyTable");
 
-let slots = JSON.parse(localStorage.getItem("slots")) || [];
-let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+const totalSlots=40;
+let slots=[];
+let history=[];
 
-// INIT
-if (slots.length !== totalSlots) {
-  slots = [];
-  for (let i = 1; i <= totalSlots; i++) {
-    slots.push({
-      number: i,
-      status: "free",
-      vehicleNo: "",
-      vehicleType: "",
-      owner: ""
-    });
-  }
-  localStorage.setItem("slots", JSON.stringify(slots));
+/* INIT SLOTS */
+for(let i=1;i<=totalSlots;i++){
+  slots.push({number:i,status:"free",vehicle:"",type:""});
 }
-// GRID
+
+/* RENDER GRID */
 function renderGrid(){
   parkingGrid.innerHTML="";
   slots.forEach(s=>{
     const d=document.createElement("div");
     d.className=`slot ${s.status}`;
-    d.innerHTML = s.status==="free"
-      ? `Slot ${s.number}<br>FREE`
-      : `Slot ${s.number}<br>${s.vehicleNo}<br>${s.vehicleType}`;
-    d.onclick=()=>document.getElementById("slotNumber").value=s.number;
+    d.innerHTML=`Slot ${s.number}<br>${s.status==="free"?"FREE":s.vehicle}`;
+    d.onclick=()=>slotNumber.value=s.number;
     parkingGrid.appendChild(d);
   });
 }
 
-// REGISTER
-document.getElementById("bookingForm").onsubmit=e=>{
+/* BOOK SLOT */
+bookingForm.onsubmit=e=>{
   e.preventDefault();
-  const name=userName.value;
-  const vno=vehicleNo.value;
-  const vtype=vehicleType.value;
-  const sn=Number(slotNumber.value);
-  const i=slots.findIndex(s=>s.number===sn);
-
-  if(slots[i].status==="booked"){alert("Already booked");return;}
-
+  const i=slots.findIndex(s=>s.number==slotNumber.value);
+  if(slots[i].status==="booked"){alert("Slot already booked");return;}
   slots[i].status="booked";
-  slots[i].vehicleNo=vno;
-  slots[i].vehicleType=vtype;
-  slots[i].owner=name;
-
-  bookings.push({slot:sn,name,vno,vtype,time:Date.now()});
-
-  localStorage.setItem("slots",JSON.stringify(slots));
-  localStorage.setItem("bookings",JSON.stringify(bookings));
-
+  const fullVehicleNo = stateCode.value + "-" + vehicleNo.value.trim().toUpperCase();
+slots[i].vehicle = fullVehicleNo;
+  slots[i].type=vehicleType.value;
+  history.push({slot:slots[i].number,vehicle: fullVehicleNo,type:vehicleType.value,time:new Date()});
+  bookingForm.reset();
   renderAll();
-  e.target.reset();
 };
 
-// SEARCH
+/* SEARCH */
 function searchVehicle(){
-  const v=searchVehicleInput.value;
-  const s=slots.find(x=>x.vehicleNo===v);
-  searchResult.innerHTML = s
-    ? `Found in Slot ${s.number} (${s.vehicleType})`
-    : "Not found";
+  const v = searchVehicleInput.value.trim().toUpperCase();
+  const s = slots.find(x => x.vehicle === v);
+  searchResult.textContent = s ? `Found in Slot ${s.number}` : "Not Found";
 }
-  function updateLiveRegister(){
-  liveRegister.innerHTML = "";
 
-  slots
-    .filter(s => s.status === "booked")
-    .forEach(s => {
-
-      const booking = bookings.find(
-        b => b.slot === s.number && b.timeOut === null
-      );
-
-      if (!booking) return;
-
-      const duration = getLiveDuration(booking.timeIn);
-
-      const li = document.createElement("li");
-      li.innerHTML = `
-        Slot ${s.number} → ${s.vehicleNo} (${s.vehicleType})<br>
-        ⏱️ Parked: ${duration}
-      `;
-      liveRegister.appendChild(li);
-    });
-}
-// CHECKOUT
+/* CHECKOUT */
 function checkoutVehicle(){
-  const sn=Number(checkoutSlot.value);
-  const i=slots.findIndex(s=>s.number===sn);
-
-  if(i===-1 || slots[i].status==="free"){
-    alert("Invalid slot");
-    return;
-  }
-
-  slots[i]={number:sn,status:"free",vehicleNo:"",vehicleType:"",owner:""};
-  localStorage.setItem("slots",JSON.stringify(slots));
+  const i=slots.findIndex(s=>s.number==checkoutSlot.value);
+  if(i<0||slots[i].status==="free"){alert("Invalid Slot");return;}
+  slots[i].status="free";
+  slots[i].vehicle="";
+  slots[i].type="";
   renderAll();
 }
 
-// LIVE REGISTER
-function updateLiveRegister(){
+/* LIVE */
+function updateLive(){
   liveRegister.innerHTML="";
   slots.filter(s=>s.status==="booked").forEach(s=>{
     const li=document.createElement("li");
-    li.textContent=`Slot ${s.number} → ${s.vehicleNo} (${s.vehicleType})`;
+    li.textContent=`Slot ${s.number} → ${s.vehicle} (${s.type})`;
     liveRegister.appendChild(li);
   });
 }
 
-// HISTORY
+/* HISTORY */
 function renderHistory(){
   historyTable.innerHTML="";
-  bookings.forEach(b=>{
-    const fee=20;
-    historyTable.innerHTML+=`
-    <tr>
-      <td>${b.slot}</td>
-      <td>${b.name}</td>
-      <td>${b.vno}</td>
-      <td>${b.vtype}</td>
-      <td>${new Date(b.time).toLocaleTimeString()}</td>
-      <td>₹${fee}</td>
-    </tr>`;
+  history.forEach(h=>{
+    const r=document.createElement("tr");
+    r.innerHTML=`<td>${h.slot}</td><td>${h.vehicle}</td><td>${h.type}</td><td>${h.time.toLocaleTimeString()}</td>`;
+    historyTable.appendChild(r);
   });
 }
 
-// ALL
 function renderAll(){
   renderGrid();
+  updateLive();
   renderHistory();
-  updateLiveRegister();
 }
 
 renderAll();
@@ -298,5 +338,3 @@ renderAll();
 
 </body>
 </html>
-
-
